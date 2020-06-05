@@ -3,6 +3,11 @@ import javax.swing.*;
 import javax.sound.midi.*;
 import java.util.*;  //for ArrayList really...
 import java.awt.event.*;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
+import java.io.File;
 
 public class BeatBox {
     JPanel mainPanel;
@@ -36,7 +41,7 @@ public class BeatBox {
 
         checkboxList = new ArrayList<JCheckBox>();
         //Box buttonBox = new Box(BoxLayout.Y_AXIS);
-        GridLayout buttonBox = new GridLayout(6,1);
+        GridLayout buttonBox = new GridLayout(8,1);
         buttonBox.setVgap(1);
         buttonBox.setHgap(2);
         buttonPanel = new JPanel(buttonBox);
@@ -83,6 +88,20 @@ public class BeatBox {
         selectAll.setBackground(Color.WHITE);
         selectAll.setFont(new Font("Serif", Font.BOLD, 28));
         buttonPanel.add(selectAll);
+
+        JButton saveBeat = new JButton("Save Beat");
+        saveBeat.addActionListener(new MySendListener());
+        saveBeat.setForeground(Color.PINK);
+        saveBeat.setBackground(Color.magenta);
+        saveBeat.setFont(new Font("Serif", Font.BOLD, 28));
+        buttonPanel.add(saveBeat);
+
+        JButton loadBeat = new JButton("load Beat");
+        loadBeat.addActionListener(new MyReadInListener());
+        loadBeat.setForeground(Color.PINK);
+        loadBeat.setBackground(Color.magenta);
+        loadBeat.setFont(new Font("Serif", Font.BOLD, 28));
+        buttonPanel.add(loadBeat);
 
         Box nameBox = new Box(BoxLayout.Y_AXIS);
         for (int i = 0; i < 16; i++){
@@ -245,6 +264,49 @@ public class BeatBox {
             tempoLabel.setFont(new Font("Arial", Font.BOLD, 20));
         }
     }
+
+    public class MySendListener implements ActionListener{
+        public void actionPerformed(ActionEvent a){
+            boolean[] checkboxState = new boolean[256];
+
+            for(int i = 0; i < 256; i++){
+                JCheckBox check = (JCheckBox) checkboxList.get(i);
+                if (check.isSelected()){
+                    checkboxState[i] = true;
+                }
+            }
+            
+            try{
+                FileOutputStream fileStream = new FileOutputStream(new File("Checkbox.ser"));
+                ObjectOutputStream os = new ObjectOutputStream(fileStream);
+                os.writeObject(checkboxState);
+            } catch(Exception ex){ex.printStackTrace();}
+        }
+    }
+
+    public class MyReadInListener implements ActionListener{
+        public void actionPerformed(ActionEvent a){
+            boolean [] checkboxState = null;
+            try{
+                FileInputStream fileIn = new FileInputStream(new File("Checkbox.ser"));
+                ObjectInputStream is = new ObjectInputStream(fileIn);
+                checkboxState = (boolean[]) is.readObject();
+            } catch(Exception ex){ex.printStackTrace();}
+
+            for(int i = 0; i < 256; i++){
+                JCheckBox check = (JCheckBox) checkboxList.get(i);
+                if (checkboxState[i]){
+                    check.setSelected(true);
+                }
+                else{
+                    check.setSelected(false);
+                }
+            }
+            sequencer.stop();
+            buildTrackAndStart();
+        }
+    }
+
     public void makeTracks(int [] list){
         for (int i = 0; i < 16; i++){
             int key = list[i];
